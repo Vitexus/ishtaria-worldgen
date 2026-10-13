@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Vítězslav Dvořák <cybervitexus@gmail.com>
 Build-Depends: debhelper-compat (= 13), cargo, rustc (>= 1.80)
 Standards-Version: 4.7.0
-Homepage: https://github.com/VitexSoftware/ishtaria-worldgen
+Homepage: https://git.vitexsoftware.com/Ishtaria/ishtaria-worldgen
 Rules-Requires-Root: no
 
 Package: ishtaria-worldgen

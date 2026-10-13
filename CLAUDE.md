@@ -5,7 +5,7 @@ Deterministic procedural terrain and cube-sphere geometry. Licence: MIT. Part of
 `ishtaria-docs`): run Git, Cargo and `make` inside the repository you change. Work on `main`; do not commit,
 push or deploy unless asked. Debian/Ubuntu x86-64 is the only supported platform.
 
-Developer guide: https://github.com/VitexSoftware/ishtaria-docs/tree/main/source/development (`contributing`, `local-setup`, `invariants`, `cookbook`, the code tours).
+Developer guide: https://git.vitexsoftware.com/Ishtaria/ishtaria-docs/src/branch/main/source/development (`contributing`, `local-setup`, `invariants`, `cookbook`, the code tours).
 
 ## Checks before you say you are done
 

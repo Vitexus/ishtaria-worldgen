@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT"
 description = "Deterministic procedural planet generator for Ishtaria (cube-sphere terrain from a seed)."
-repository = "https://github.com/VitexSoftware/ishtaria-worldgen"
+repository = "https://git.vitexsoftware.com/Ishtaria/ishtaria-worldgen"
 authors = ["Vítězslav Dvořák <cybervitexus@gmail.com>"]
 rust-version = "1.80"
 

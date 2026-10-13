@@ -1,6 +1,6 @@
 # ishtaria-worldgen
 
-<img src="https://raw.githubusercontent.com/VitexSoftware/ishtaria-client/main/assets/branding/emblem.png" alt="Ishtaria" width="96">
+<img src="https://git.vitexsoftware.com/Ishtaria/ishtaria-client/raw/branch/main/assets/branding/emblem.png" alt="Ishtaria" width="96">
 
 Deterministic procedural generator of an Earth-sized planet. Terrain is a pure function of `(seed, position)` on a cube-sphere; worlds store only deltas.
 
@@ -38,4 +38,4 @@ License: MIT
 ## Part of Ishtaria
 
 Ishtaria is an open-source, persistent, federated virtual planet of Earth size.
-Documentation: https://vitexsoftware.github.io/ishtaria-docs/ · All repositories: https://github.com/VitexSoftware?q=ishtaria
+Documentation: https://vitexsoftware.github.io/ishtaria-docs/ · All repositories: https://git.vitexsoftware.com/Ishtaria

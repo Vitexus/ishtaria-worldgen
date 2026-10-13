@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: ishtaria-worldgen
-Source: https://github.com/VitexSoftware/ishtaria-worldgen
+Source: https://git.vitexsoftware.com/Ishtaria/ishtaria-worldgen
 
 Files: *
 Copyright: 2026 Vítězslav Dvořák <cybervitexus@gmail.com>
