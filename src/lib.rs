@@ -8,6 +8,7 @@
 //! faces is a quadtree, which gives natural level-of-detail tiles.
 
 pub mod cubesphere;
+pub mod earth;
 pub mod noise;
 
 pub use cubesphere::{Face, Vec3};
