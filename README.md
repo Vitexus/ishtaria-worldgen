@@ -8,6 +8,11 @@ Deterministic procedural generator of an Earth-sized planet. Terrain is a pure f
 ishtaria-worldgen 42 256 > planet.pgm     # six cube faces as a height-map strip
 ```
 
+While rendering, the binary writes `PROGRESS <done>/<total>` lines to stderr
+(one per completed face row). stdout stays a clean P5 PGM so scripts that only
+capture stdout keep working; `ishtaria-admin` reads both to drive its progress
+bar when generating or preparing a world update.
+
 The generator combines continental shelves, lowland hills and ridged mountain
 regions. Noise is sampled in three-dimensional sphere coordinates, so neighboring
 cube faces meet without seams. Default elevation amplitude is 8000 metres;
@@ -32,7 +37,8 @@ ishtaria-worldgen --earth HEIGHT.pgm --water MASK.pgm 512 > planet.pgm
 ```
 
 The sphere is mapped to the planet's real geography as `latitude = asin(y)` and
-`longitude = atan2(z, x)` (the +Y face is the north pole), so the server's compass
+`longitude = atan2(-z, x)` (the +Y face is the north pole; east is towards -Z, so the map is not a mirror image),
+so the server's compass
 and historical bearings are the real ones. The water mask decides the coastline:
 water pixels stay at or below sea level (so the shallow Persian Gulf stays sea),
 land pixels stay above it (so the dry Qattara depression stays land). The seed

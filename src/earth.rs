@@ -15,8 +15,9 @@
 //!   the 8-bit strip quantises them.
 //!
 //! Sphere coordinates map to Earth geography as `latitude = asin(y)` and
-//! `longitude = atan2(z, x)`: the +Y face is the north pole, the +X face the
-//! Greenwich meridian. With this convention the server's compass (`north` in
+//! `longitude = atan2(-z, x)`: the +Y face is the north pole, the +X face the
+//! Greenwich meridian and east is towards -Z, so the right-handed Y-up frame is
+//! not a mirror image of the planet (seen from outside, east is on the right). With this convention the server's compass (`north` in
 //! placement) is the real north of the source planet.
 
 use crate::cubesphere::Face;
@@ -100,7 +101,7 @@ impl Equirect {
     pub fn face_byte(&self, face: Face, u: f64, v: f64) -> u8 {
         let point = face.sphere_point(u, v);
         let latitude = point.y.asin().to_degrees();
-        let lon = point.z.atan2(point.x).to_degrees();
+        let lon = (-point.z).atan2(point.x).to_degrees();
         let (metres, water) = self.sample(latitude, lon);
         let byte = ((metres - MIN_METRES) / METRES_RANGE * 255.0)
             .round()
@@ -260,5 +261,17 @@ mod tests {
             north > south,
             "north {north} must be higher than south {south}"
         );
+    }
+
+    #[test]
+    fn east_is_towards_negative_z() {
+        // Only the column centred on 45 E is high. On the +X face (Greenwich) east is -Z, which is
+        // u > 0 there, so a mirrored frame would put the plateau at u < 0.
+        let map = map_of(&[0, 0, 1000, 0, 0, 0, 1000, 0], &[0; 8]);
+        let decode = |byte: u8| i32::from(byte) * 16000 / 255 - 8000;
+        let east = decode(map.face_byte(Face::PosX, 1.0, 0.0));
+        let west = decode(map.face_byte(Face::PosX, -1.0, 0.0));
+        assert!((east - 1000).abs() < 63, "east {east}");
+        assert!(west.abs() < 63, "west {west}");
     }
 }

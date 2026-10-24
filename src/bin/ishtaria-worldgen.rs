@@ -10,6 +10,10 @@
 //! `--earth` renders a real planet from a datadisk's equirectangular relief
 //! maps instead of noise (see `ishtaria_worldgen::earth`); the seed plays no
 //! part in it.
+//!
+//! Progress is reported on stderr as `PROGRESS <done>/<total>` lines (one per
+//! completed face row, `done` from 0 to `total`). stdout remains a clean P5 PGM
+//! so callers that only capture stdout keep working; the admin tool reads both.
 
 use ishtaria_worldgen::{earth::Equirect, Face, Terrain};
 use std::io::{self, BufWriter, Write};
@@ -17,6 +21,13 @@ use std::io::{self, BufWriter, Write};
 fn fail(message: &str) -> ! {
     eprintln!("ishtaria-worldgen: {message}");
     std::process::exit(2);
+}
+
+/// Tell interactive callers how far the strip has gone (row `done` of `total`).
+fn report_progress(done: usize, total: usize) {
+    let mut err = io::stderr().lock();
+    let _ = writeln!(err, "PROGRESS {done}/{total}");
+    let _ = err.flush();
 }
 
 fn main() -> io::Result<()> {
@@ -59,6 +70,7 @@ fn main() -> io::Result<()> {
         };
         let map = Equirect::load(height.as_ref(), mask.as_ref())?;
         writeln!(out, "P5\n{} {}\n255", size * 6, size)?;
+        report_progress(0, size);
         let mut row = vec![0u8; size * 6];
         for j in 0..size {
             for (f, face) in Face::ALL.iter().enumerate() {
@@ -69,6 +81,7 @@ fn main() -> io::Result<()> {
                 }
             }
             out.write_all(&row)?;
+            report_progress(j + 1, size);
         }
         return out.flush();
     }
@@ -89,6 +102,7 @@ fn main() -> io::Result<()> {
     };
 
     writeln!(out, "P5\n{} {}\n255", size * 6, size)?;
+    report_progress(0, size);
     let mut row = vec![0u8; size * 6];
     for j in 0..size {
         for (f, face) in Face::ALL.iter().enumerate() {
@@ -100,6 +114,7 @@ fn main() -> io::Result<()> {
             }
         }
         out.write_all(&row)?;
+        report_progress(j + 1, size);
     }
     out.flush()
 }
