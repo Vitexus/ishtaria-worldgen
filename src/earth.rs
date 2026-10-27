@@ -26,11 +26,7 @@ use std::io::{self, ErrorKind};
 use std::path::Path;
 
 /// Metres below which the strip encoder clamps to 0, matching the server.
-const MIN_METRES: f64 = -8000.0;
-const METRES_RANGE: f64 = 16000.0;
 /// Strip bytes: 127 and less decode at or below sea level, 128 and more above it.
-const SEA_BYTE: u8 = 127;
-const LAND_BYTE: u8 = 128;
 
 #[derive(Debug)]
 pub struct Equirect {
@@ -96,21 +92,19 @@ impl Equirect {
         (metres, water)
     }
 
-    /// Strip byte of a cube-sphere point: the height quantised the way servers
-    /// decode it, with the water mask deciding which side of sea level it lands.
-    pub fn face_byte(&self, face: Face, u: f64, v: f64) -> u8 {
+    /// Strip sample of a cube-sphere point: the height with its local relief for `seed`,
+    /// quantised by [`crate::strip::encode`] with the water mask deciding the side of sea level.
+    pub fn face_sample(&self, face: Face, u: f64, v: f64, seed: &str) -> u16 {
         let point = face.sphere_point(u, v);
         let latitude = point.y.asin().to_degrees();
         let lon = (-point.z).atan2(point.x).to_degrees();
-        let (metres, water) = self.sample(latitude, lon);
-        let byte = ((metres - MIN_METRES) / METRES_RANGE * 255.0)
-            .round()
-            .clamp(0.0, 255.0) as u8;
-        if water >= 0.5 {
-            byte.min(SEA_BYTE)
+        let (base, water) = self.sample(latitude, lon);
+        let metres = if water >= 0.5 {
+            base
         } else {
-            byte.max(LAND_BYTE)
-        }
+            crate::strip::height_with_relief([point.x, point.y, point.z], base, seed)
+        };
+        crate::strip::encode(metres, water >= 0.5)
     }
 }
 
@@ -178,6 +172,7 @@ fn read_pgm(path: &Path, maximum: u16) -> io::Result<(usize, usize, Vec<u16>)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::strip;
 
     fn map_of(heights: &[u16], water: &[u8]) -> Equirect {
         Equirect {
@@ -226,24 +221,32 @@ mod tests {
 
     #[test]
     fn land_never_sinks_and_water_never_rises() {
-        // Raw 32768 decodes to -32768 m: a land abyss is clamped up to +31.4 m.
+        // Raw 32768 decodes to -32768 m: a land abyss is clamped up to just above sea level.
         let map = map_of(&[32768; 8], &[0, 0, 0, 255, 0, 0, 0, 0]);
-        assert_eq!(map.face_byte(Face::PosX, -0.5, 0.0), 128);
-        // Raw 8192 decodes to +8192 m, but water is clamped down to -31.4 m.
+        assert_eq!(
+            map.face_sample(Face::PosX, -0.5, 0.0, "42"),
+            strip::LAND_SAMPLE
+        );
+        // Raw 8192 decodes to +8192 m, but water is clamped down to sea level.
         let map = map_of(&[8192; 8], &[255; 8]);
-        assert_eq!(map.face_byte(Face::PosZ, 0.0, 0.0), 127);
+        assert_eq!(
+            map.face_sample(Face::PosZ, 0.0, 0.0, "42"),
+            strip::SEA_SAMPLE
+        );
     }
 
     #[test]
-    fn round_trips_metres_through_the_strip_byte() {
-        // 4000 m must land on a byte that the server decodes back to 4000 m;
-        // the strip cannot hold anything above 8000 m (Everest rounds to 7998).
+    fn round_trips_metres_through_the_strip_with_its_relief() {
+        // 4000 m with the seed's relief must decode, within one step, to the height the
+        // relief function gives for that point: the server and clients see the same surface.
         let map = map_of(&[4000; 8], &[0; 8]);
-        let byte = map.face_byte(Face::PosX, 0.0, 0.0);
-        let decoded = byte as i32 * 16000 / 255 - 8000;
+        let sample = map.face_sample(Face::PosX, 0.0, 0.0, "42");
+        let decoded = f64::from(sample) * strip::STEP_M + strip::FLOOR_M;
+        let point = Face::PosX.sphere_point(0.0, 0.0);
+        let expected = strip::height_with_relief([point.x, point.y, point.z], 4000.0, "42");
         assert!(
-            (decoded - 4000).abs() < 63,
-            "{decoded} vs 4000 (byte {byte})"
+            (decoded - expected).abs() <= strip::STEP_M,
+            "{decoded} vs {expected}"
         );
     }
 
@@ -266,12 +269,13 @@ mod tests {
     #[test]
     fn east_is_towards_negative_z() {
         // Only the column centred on 45 E is high. On the +X face (Greenwich) east is -Z, which is
-        // u > 0 there, so a mirrored frame would put the plateau at u < 0.
+        // u > 0 there, so a mirrored frame would put the plateau at u < 0. The relief is at most
+        // 12 m, so a 1000 m plateau stays within 13 m of its height.
         let map = map_of(&[0, 0, 1000, 0, 0, 0, 1000, 0], &[0; 8]);
-        let decode = |byte: u8| i32::from(byte) * 16000 / 255 - 8000;
-        let east = decode(map.face_byte(Face::PosX, 1.0, 0.0));
-        let west = decode(map.face_byte(Face::PosX, -1.0, 0.0));
-        assert!((east - 1000).abs() < 63, "east {east}");
-        assert!(west.abs() < 63, "west {west}");
+        let decode = |sample: u16| f64::from(sample) * strip::STEP_M + strip::FLOOR_M;
+        let east = decode(map.face_sample(Face::PosX, 1.0, 0.0, "42"));
+        let west = decode(map.face_sample(Face::PosX, -1.0, 0.0, "42"));
+        assert!((east - 1000.0).abs() < 13.0, "east {east}");
+        assert!(west.abs() < 0.5, "west {west}");
     }
 }

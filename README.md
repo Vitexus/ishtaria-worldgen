@@ -15,8 +15,12 @@ bar when generating or preparing a world update.
 
 The generator combines continental shelves, lowland hills and ridged mountain
 regions. Noise is sampled in three-dimensional sphere coordinates, so neighboring
-cube faces meet without seams. Default elevation amplitude is 8000 metres;
-the PGM encodes `[-8000, 8000]` as `[0, 255]`, with sea level at 127.5.
+cube faces meet without seams. Default elevation amplitude is 8000 metres.
+The strip is a 16-bit P5 PGM (maxval 65535, big-endian): a sample is the height in
+steps of 0.25 m from -8000 m, sea level is exactly 32000, water samples never rise
+above it and land samples never sink to it. The local relief of the seed (up to about
++/-12 m, faded out at the coast) is generated into every land sample (`strip` and
+`relief` modules, ADR 0020), so the server and every client read one surface.
 Servers derive lakes, downhill drainage, river catchments and climate biomes from
 the persisted map; clients render water, snow and biome-selected scenery.
 
@@ -33,7 +37,7 @@ of the noise:
 
 ```sh
 ishtaria-server --print-world-terrain gilgamesh    # prints the disk's two rasters
-ishtaria-worldgen --earth HEIGHT.pgm --water MASK.pgm 512 > planet.pgm
+ishtaria-worldgen --seed 2577465639 --earth HEIGHT.pgm --water MASK.pgm 512 > planet.pgm
 ```
 
 The sphere is mapped to the planet's real geography as `latitude = asin(y)` and
@@ -42,8 +46,8 @@ so the server's compass
 and historical bearings are the real ones. The water mask decides the coastline:
 water pixels stay at or below sea level (so the shallow Persian Gulf stays sea),
 land pixels stay above it (so the dry Qattara depression stays land). The seed
-plays no part in this mode; the server still stores it for the seeded local relief
-and world identity.
+(`--seed`, required in this mode; the world's seed as the server stores it) only sets
+the local relief generated into the land samples.
 
 This terrain algorithm changes newly generated maps, including maps generated
 with an existing seed. Do not regenerate over an imported world's source file or

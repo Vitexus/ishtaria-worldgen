@@ -10,6 +10,8 @@
 pub mod cubesphere;
 pub mod earth;
 pub mod noise;
+pub mod relief;
+pub mod strip;
 
 pub use cubesphere::{Face, Vec3};
 pub use noise::Terrain;

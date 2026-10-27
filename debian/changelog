@@ -1,3 +1,10 @@
+ishtaria-worldgen (0.2.0) unstable; urgency=medium
+
+  * 16-bit height strip (0.25 m steps) with the local relief generated
+    into it; --seed for --earth (ADR 0020).
+
+ -- Vítězslav Dvořák <cybervitexus@gmail.com>  Tue, 27 Oct 2026 10:29:26 +0100
+
 ishtaria-worldgen (0.1.1) unstable; urgency=medium
 
   * Report PROGRESS done/total on stderr so admin can show a progress bar.
